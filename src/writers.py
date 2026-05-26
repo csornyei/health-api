@@ -61,6 +61,12 @@ def _sleep_point(name: str, point: SleepDataPoint) -> Point:
         Point(name)
         .field("duration_hours", round(duration_hours, 4))
         .field("sleep_end_ts", int(sleep_end.timestamp()))
+        .field("total_sleep", point.totalSleep)
+        .field("core", point.core)
+        .field("deep", point.deep)
+        .field("rem", point.rem)
+        .field("awake", point.awake)
+        .field("asleep", point.asleep)
         .time(sleep_start)
     )
 
