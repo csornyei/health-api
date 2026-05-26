@@ -202,11 +202,11 @@ def read_recovery(
     period_end: date,
     n: int,
 ) -> Recovery:
-    rhr_daily = _daily_metric(client, "resting_heart_rate", "avg", "AVG", period_start, period_end, n)
-    hrv_daily = _daily_metric(client, "heart_rate_variability", "avg", "AVG", period_start, period_end, n)
-    resp_daily = _daily_metric(client, "respiratory_rate", "avg", "AVG", period_start, period_end, n)
+    rhr_daily = _daily_metric(client, "resting_heart_rate", "qty", "AVG", period_start, period_end, n)
+    hrv_daily = _daily_metric(client, "heart_rate_variability", "qty", "AVG", period_start, period_end, n)
+    resp_daily = _daily_metric(client, "respiratory_rate", "qty", "AVG", period_start, period_end, n)
     spo2_daily = _daily_metric(client, "blood_oxygen_saturation", "qty", "AVG", period_start, period_end, n)
-    breath_daily = _daily_metric(client, "breathing_disturbances", "avg", "AVG", period_start, period_end, n)
+    breath_daily = _daily_metric(client, "breathing_disturbances", "qty", "AVG", period_start, period_end, n)
 
     # Wrist temp — current period
     wrist_daily = _daily_metric(
