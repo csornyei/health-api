@@ -108,10 +108,17 @@ class Workout(BaseModel):
 # ── Root ───────────────────────────────────────────────────────────────────
 
 
-class HealthData(BaseModel):
+class MetricsData(BaseModel):
     metrics: list[Metric]
+
+
+class MetricsExport(BaseModel):
+    data: MetricsData
+
+
+class WorkoutsData(BaseModel):
     workouts: list[Workout]
 
 
-class HealthExport(BaseModel):
-    data: HealthData
+class WorkoutsExport(BaseModel):
+    data: WorkoutsData
