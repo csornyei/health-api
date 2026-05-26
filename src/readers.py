@@ -257,9 +257,9 @@ def read_sleep(
         client,
         """
         SELECT time AS sleep_start_ts, sleep_end_ts,
-               total_sleep, core, deep, rem, awake, "inBed"
+               total_sleep, core, deep, rem, awake
         FROM "sleep_analysis"
-        WHERE time >= $start AND time <= $end AND source LIKE '%Watch%'
+        WHERE time >= $start AND time <= $end
         ORDER BY time
         """,
         {"start": _ts(period_start), "end": _ts_end(period_end)},
@@ -284,7 +284,7 @@ def read_sleep(
         rem = float(row.get("rem") or 0)
         core = float(row.get("core") or 0)
         awake = float(row.get("awake") or 0)
-        in_bed = float(row.get("inBed") or 0) or (deep + rem + core + awake)
+        in_bed = deep + rem + core + awake
         efficiency = round(total / in_bed * 100, 1) if in_bed else None
 
         nights.append(
