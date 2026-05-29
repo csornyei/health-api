@@ -85,8 +85,8 @@ class Fitness(BaseModel):
 
 
 class Body(BaseModel):
-    weight_kg: None = None
-    body_fat_pct: None = None
+    weight_kg: DailyMetric | None
+    body_fat_pct: DailyMetric | None
 
 
 class SummaryMeta(BaseModel):

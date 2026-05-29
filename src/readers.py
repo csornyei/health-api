@@ -1,4 +1,3 @@
-import calendar
 from datetime import date, datetime, timedelta, timezone
 from statistics import mean
 
@@ -6,6 +5,7 @@ from influxdb_client_3 import InfluxDBClient3
 
 from src.summary_schemas import (
     ActivityMetric,
+    Body,
     DailyMetric,
     Energy,
     Fitness,
@@ -338,3 +338,21 @@ def read_fitness(
     delta = round(current - prior, 2) if current is not None and prior is not None else None
 
     return Fitness(vo2_max_current=current, vo2_max_prior=prior, vo2_max_delta=delta)
+
+
+# ── Body ───────────────────────────────────────────────────────────────────────
+
+
+def read_body(
+    client: InfluxDBClient3,
+    period_start: date,
+    period_end: date,
+    n: int,
+) -> Body:
+    weight_daily = _daily_metric(client, "weight_body_mass", "qty", "AVG", period_start, period_end, n)
+    fat_daily = _daily_metric(client, "body_fat_percentage", "qty", "AVG", period_start, period_end, n)
+
+    weight = DailyMetric(daily=weight_daily, avg=_avg(weight_daily)) if any(v is not None for v in weight_daily) else None
+    fat = DailyMetric(daily=fat_daily, avg=_avg(fat_daily)) if any(v is not None for v in fat_daily) else None
+
+    return Body(weight_kg=weight, body_fat_pct=fat)
