@@ -90,7 +90,7 @@ class Workout(BaseModel):
     name: str
     start: str
     end: str
-    duration: int  # seconds
+    duration: float
     distance: ValueWithUnits
     speed: ValueWithUnits
     stepCadence: ValueWithUnits
