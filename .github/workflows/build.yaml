@@ -46,6 +46,7 @@ jobs:
 
   build:
     name: Build and Push
+    needs: version-check
     runs-on: ubuntu-latest
     permissions:
       contents: read
