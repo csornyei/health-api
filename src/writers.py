@@ -88,22 +88,13 @@ def _workout_points(workout: Workout) -> list[Point]:
         hr_max = workout.maxHeartRate.qty if workout.maxHeartRate else None
         hr_min = min(p.Min for p in workout.heartRateData) if workout.heartRateData else None
 
-    hr_recovery: float | None = None
-    if workout.heartRateRecovery:
-        if len(workout.heartRateRecovery) > 1:
-            logger.warning(
-                "multiple heartRateRecovery entries, using first",
-                workout_id=workout.id,
-                recovery_count=len(workout.heartRateRecovery),
-            )
-        hr_recovery = workout.heartRateRecovery[0].Avg
 
     summary = (
         Point("workout")
         .tag("id", workout.id)
         .tag("type", workout.name)
         .field("end_ts", int(end_ts.timestamp()))
-        .field("duration_s", workout.duration)
+        .field("duration_s", int(workout.duration))
         .field("distance_km", workout.distance.qty)
         .field("speed_kmh", workout.speed.qty)
         .field("active_energy", workout.activeEnergyBurned.qty)
@@ -116,14 +107,22 @@ def _workout_points(workout: Workout) -> list[Point]:
         summary = summary.field("hr_min_bpm", int(hr_min))
     if hr_max is not None:
         summary = summary.field("hr_max_bpm", int(hr_max))
-    if hr_recovery is not None:
-        summary = summary.field("hr_recovery_bpm", int(hr_recovery))
-
     points: list[Point] = [summary]
 
     for p in workout.heartRateData:
         points.append(
             Point("heart_rate")
+            .tag("workout_id", workout.id)
+            .tag("units", p.units)
+            .field("min", p.Min)
+            .field("avg", p.Avg)
+            .field("max", p.Max)
+            .time(_parse_ts(p.date))
+        )
+
+    for p in workout.heartRateRecovery:
+        points.append(
+            Point("heart_rate_recovery")
             .tag("workout_id", workout.id)
             .tag("units", p.units)
             .field("min", p.Min)

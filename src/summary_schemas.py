@@ -46,6 +46,13 @@ class SleepSummary(BaseModel):
     avg_efficiency_pct: float | None
 
 
+class HrRecoveryPoint(BaseModel):
+    time: str
+    min_bpm: int
+    avg_bpm: int
+    max_bpm: int
+
+
 class WorkoutOut(BaseModel):
     type: str
     date: str
@@ -55,6 +62,7 @@ class WorkoutOut(BaseModel):
     avg_hr_bpm: int | None
     max_hr_bpm: int | None
     active_kcal: int
+    hr_recovery: list[HrRecoveryPoint]
 
 
 class ActivityMetric(BaseModel):

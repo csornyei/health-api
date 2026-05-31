@@ -9,6 +9,7 @@ from src.summary_schemas import (
     DailyMetric,
     Energy,
     Fitness,
+    HrRecoveryPoint,
     Recovery,
     SleepNight,
     SleepSummary,
@@ -115,6 +116,40 @@ def _activity_metric(daily: list[float | None]) -> ActivityMetric:
     return ActivityMetric(daily=daily, total=total, avg=avg)
 
 
+def _read_hr_recovery(
+    client: InfluxDBClient3,
+    period_start: date,
+    period_end: date,
+) -> dict[str, list[HrRecoveryPoint]]:
+    rows = _query(
+        client,
+        """
+        SELECT time, workout_id, "min", "avg", "max"
+        FROM "heart_rate_recovery"
+        WHERE time >= $start AND time <= $end
+        ORDER BY workout_id, time
+        """,
+        {"start": _ts(period_start), "end": _ts_end(period_end)},
+    )
+    result: dict[str, list[HrRecoveryPoint]] = {}
+    for row in rows:
+        wid = row.get("workout_id")
+        if not wid:
+            continue
+        ts = row["time"]
+        if isinstance(ts, datetime):
+            ts = ts.astimezone(timezone.utc).isoformat()
+        result.setdefault(wid, []).append(
+            HrRecoveryPoint(
+                time=str(ts),
+                min_bpm=int(row["min"]),
+                avg_bpm=int(row["avg"]),
+                max_bpm=int(row["max"]),
+            )
+        )
+    return result
+
+
 def read_training(
     client: InfluxDBClient3,
     period_start: date,
@@ -131,7 +166,7 @@ def read_training(
     workout_rows = _query(
         client,
         """
-        SELECT time AS start_ts, end_ts, type, duration_s,
+        SELECT time AS start_ts, end_ts, id, type, duration_s,
                distance_km, hr_avg_bpm, hr_max_bpm, active_energy
         FROM "workout"
         WHERE time >= $start AND time <= $end
@@ -139,6 +174,7 @@ def read_training(
         """,
         {"start": _ts(period_start), "end": _ts_end(period_end)},
     )
+    hr_recovery_by_workout = _read_hr_recovery(client, period_start, period_end)
     workouts: list[WorkoutOut] = []
     for row in workout_rows:
         start_ts: datetime = row["start_ts"]
@@ -147,6 +183,7 @@ def read_training(
         else:
             start_ts = start_ts.astimezone(timezone.utc)
         dist = row.get("distance_km")
+        workout_id = row.get("id")
         workouts.append(
             WorkoutOut(
                 type=row["type"],
@@ -157,6 +194,7 @@ def read_training(
                 avg_hr_bpm=int(row["hr_avg_bpm"]) if row.get("hr_avg_bpm") else None,
                 max_hr_bpm=int(row["hr_max_bpm"]) if row.get("hr_max_bpm") else None,
                 active_kcal=int(row.get("active_energy") or 0),
+                hr_recovery=hr_recovery_by_workout.get(workout_id, []) if workout_id else [],
             )
         )
 
