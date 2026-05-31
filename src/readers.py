@@ -12,6 +12,8 @@ from src.summary_schemas import (
     Energy,
     Fitness,
     HrRecoveryPoint,
+    Nutrition,
+    NutritionStat,
     Recovery,
     SleepNight,
     SleepSummary,
@@ -408,3 +410,29 @@ def read_body(
     fat = DailyMetric(daily=fat_daily, avg=_avg(fat_daily)) if any(v is not None for v in fat_daily) else None
 
     return Body(weight_kg=weight, body_fat_pct=fat)
+
+
+# ── Nutrition ──────────────────────────────────────────────────────────────────
+
+
+def read_nutrition(
+    client: InfluxDBClient3,
+    period_start: date,
+    period_end: date,
+    n: int,
+) -> Nutrition:
+    def _stat(measurement: str) -> NutritionStat:
+        daily = _daily_metric(client, measurement, "qty", "SUM", period_start, period_end, n)
+        populated = [v for v in daily if v is not None]
+        total = round(sum(populated), 2) if populated else None
+        return NutritionStat(daily=daily, total=total)
+
+    return Nutrition(
+        vitamin_b12=_stat("vitamin_b12"),
+        saturated_fat=_stat("saturated_fat"),
+        total_fat=_stat("total_fat"),
+        fiber=_stat("fiber"),
+        protein=_stat("protein"),
+        dietary_energy=_stat("dietary_energy"),
+        carbohydrates=_stat("carbohydrates"),
+    )

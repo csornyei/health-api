@@ -6,7 +6,7 @@ from influxdb_client_3 import InfluxDBClient3
 
 from src.influxdb import get_all_metric_names, get_influxdb_client, query_metrics
 from src.logger import logger
-from src.schemas import MetricsExport, WorkoutsExport
+from src.schemas import MetricsExport, NutritionExport, WorkoutsExport
 from src.writers import write_metrics, write_workouts
 
 router = APIRouter(prefix="/health")
@@ -72,3 +72,18 @@ def ingest_workouts(
         logger.error("failed to write workouts", workouts_count=count, exc_info=exc)
         raise HTTPException(status_code=503, detail="Failed to write workouts to database") from exc
     return {"written": {"workouts": count}}
+
+
+@router.post("/nutrition", tags=["ingest"])
+def ingest_nutrition(
+    export: NutritionExport,
+    db: Annotated[InfluxDBClient3, Depends(get_influxdb_client)],
+) -> dict:
+    count = len(export.data.metrics)
+    logger.info("nutrition export received", metrics_count=count)
+    try:
+        write_metrics(db, export.data.metrics)
+    except Exception as exc:
+        logger.error("failed to write nutrition metrics", metrics_count=count, exc_info=exc)
+        raise HTTPException(status_code=503, detail="Failed to write nutrition metrics to database") from exc
+    return {"written": {"nutrition_metrics": count}}

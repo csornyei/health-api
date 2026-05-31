@@ -8,7 +8,7 @@ from influxdb_client_3 import InfluxDBClient3
 
 from src.influxdb import get_influxdb_client
 from src.logger import logger
-from src.readers import read_body, read_energy, read_fitness, read_recovery, read_sleep, read_training
+from src.readers import read_body, read_energy, read_fitness, read_nutrition, read_recovery, read_sleep, read_training
 from src.summary_schemas import SummaryMeta, SummaryResponse
 
 router = APIRouter(prefix="/health")
@@ -56,6 +56,7 @@ def get_summary(
         sleep, sleep_summary = read_sleep(db, period_start, period_end)
         fitness = read_fitness(db, period_start, period_end)
         body = read_body(db, period_start, period_end, n)
+        nutrition = read_nutrition(db, period_start, period_end, n)
     except Exception as exc:
         logger.error("summary query failed", exc_info=exc)
         raise HTTPException(status_code=503, detail="Failed to build summary") from exc
@@ -74,4 +75,5 @@ def get_summary(
         energy=energy,
         fitness=fitness,
         body=body,
+        nutrition=nutrition,
     )

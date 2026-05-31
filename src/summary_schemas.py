@@ -104,6 +104,21 @@ class SummaryMeta(BaseModel):
     days: int
 
 
+class NutritionStat(BaseModel):
+    daily: list[float | None]
+    total: float | None
+
+
+class Nutrition(BaseModel):
+    vitamin_b12: NutritionStat
+    saturated_fat: NutritionStat
+    total_fat: NutritionStat
+    fiber: NutritionStat
+    protein: NutritionStat
+    dietary_energy: NutritionStat
+    carbohydrates: NutritionStat
+
+
 class SummaryResponse(BaseModel):
     meta: SummaryMeta
     recovery: Recovery
@@ -113,3 +128,4 @@ class SummaryResponse(BaseModel):
     energy: Energy
     fitness: Fitness
     body: Body
+    nutrition: Nutrition

@@ -55,6 +55,11 @@ class Metric(BaseModel):
     units: Optional[str] = None
     data: list[MetricDataPoint]
 
+class NutritionMetric(BaseModel):
+    name: str
+    units: Optional[str] = None
+    data: list[QuantityDataPoint]
+
 
 # ── Workout structures ─────────────────────────────────────────────────────
 
@@ -118,6 +123,14 @@ class MetricsExport(BaseModel):
 
 class WorkoutsData(BaseModel):
     workouts: list[Workout]
+
+
+class NutritionData(BaseModel):
+    metrics: list[NutritionMetric]
+
+
+class NutritionExport(BaseModel):
+    data: NutritionData    
 
 
 class WorkoutsExport(BaseModel):
