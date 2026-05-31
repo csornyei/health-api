@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     influxdb_database: str
     log_level: str = "INFO"
 
+    # OpenTelemetry
+    otel_exporter_otlp_endpoint: str
+    environment: str = "homelab"
+
 
 @lru_cache
 def get_settings() -> Settings:

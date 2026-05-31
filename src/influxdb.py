@@ -8,8 +8,6 @@ from src.logger import logger
 from src.settings import get_settings
 
 
-
-
 def get_influxdb_client() -> Generator[InfluxDBClient3, None, None]:
     settings = get_settings()
     client = InfluxDBClient3(
