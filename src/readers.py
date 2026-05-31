@@ -2,6 +2,8 @@ from datetime import date, datetime, timedelta, timezone
 from statistics import mean
 
 from influxdb_client_3 import InfluxDBClient3
+from opentelemetry import trace
+from opentelemetry.trace import StatusCode
 
 from src.summary_schemas import (
     ActivityMetric,
@@ -22,12 +24,24 @@ from src.summary_schemas import (
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+_tracer = trace.get_tracer(__name__)
+
 
 def _query(client: InfluxDBClient3, sql: str, params: dict | None = None) -> list[dict]:
-    table = client.query(sql, language="sql", query_parameters=params or {})
-    if table is None or len(table) == 0:
-        return []
-    return table.to_pylist()
+    with _tracer.start_as_current_span("influxdb.query") as span:
+        span.set_attribute("db.query.text", sql)
+        try:
+            table = client.query(sql, language="sql", query_parameters=params or {})
+        except Exception as exc:
+            span.record_exception(exc)
+            span.set_status(StatusCode.ERROR, str(exc))
+            raise
+        if table is None or len(table) == 0:
+            span.set_attribute("db.result_count", 0)
+            return []
+        rows = table.to_pylist()
+        span.set_attribute("db.result_count", len(rows))
+        return rows
 
 
 def _ts(d: date) -> str:

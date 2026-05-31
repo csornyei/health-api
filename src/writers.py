@@ -1,9 +1,13 @@
 from datetime import datetime, timezone
 
 from influxdb_client_3 import InfluxDBClient3, Point
+from opentelemetry import trace
+from opentelemetry.trace import StatusCode
 
 from src.logger import logger
 from src.schemas import HeartRateMetricPoint, Metric, QuantityDataPoint, SleepDataPoint, Workout
+
+_tracer = trace.get_tracer(__name__)
 
 
 def write_metrics(client: InfluxDBClient3, metrics: list[Metric]) -> None:
@@ -16,7 +20,15 @@ def write_metrics(client: InfluxDBClient3, metrics: list[Metric]) -> None:
                 points.append(_heart_rate_point(metric.name, metric.units, point))
             elif isinstance(point, QuantityDataPoint):
                 points.append(_quantity_point(metric.name, metric.units, point))
-    client.write(record=points)
+    with _tracer.start_as_current_span("influxdb.write_metrics") as span:
+        span.set_attribute("db.metrics_count", len(metrics))
+        span.set_attribute("db.points_count", len(points))
+        try:
+            client.write(record=points)
+        except Exception as exc:
+            span.record_exception(exc)
+            span.set_status(StatusCode.ERROR, str(exc))
+            raise
     logger.info("metrics written", metrics_count=len(metrics), points_written=len(points))
 
 
@@ -24,8 +36,16 @@ def write_workouts(client: InfluxDBClient3, workouts: list[Workout]) -> None:
     points = []
     for workout in workouts:
         points.extend(_workout_points(workout))
-    if points:
-        client.write(record=points)
+    with _tracer.start_as_current_span("influxdb.write_workouts") as span:
+        span.set_attribute("db.workouts_count", len(workouts))
+        span.set_attribute("db.points_count", len(points))
+        try:
+            if points:
+                client.write(record=points)
+        except Exception as exc:
+            span.record_exception(exc)
+            span.set_status(StatusCode.ERROR, str(exc))
+            raise
     logger.info("workouts written", workouts_count=len(workouts), points_written=len(points))
 
 

@@ -9,7 +9,7 @@ from src.routers.test import router as test_router
 from src.settings import get_settings
 from src.telemetry import setup_tracing
 
-setup_tracing(service_name="health-api")
+setup_tracing(service_name="health-api", settings=get_settings() )
 
 app = FastAPI()
 FastAPIInstrumentor().instrument_app(app)

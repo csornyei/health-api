@@ -1,3 +1,5 @@
+import tomllib
+from pathlib import Path
 from typing import Sequence
 
 from opentelemetry import trace
@@ -13,11 +15,14 @@ from opentelemetry.sdk.trace.export import (
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 
-from src.settings import get_settings
+from src.settings import Settings
 
-settings = get_settings()
+
+def _read_version() -> str:
+    pyproject = Path(__file__).parent.parent / "pyproject.toml"
+    with pyproject.open("rb") as f:
+        return tomllib.load(f)["project"]["version"]
 
 
 class _FilterHeadSpanExporter(SpanExporter):
@@ -37,12 +42,12 @@ class _FilterHeadSpanExporter(SpanExporter):
         return self._exporter.force_flush(timeout_millis)
 
 
-def setup_tracing(service_name: str, service_version: str = "0.1.0") -> None:
+def setup_tracing(service_name: str, settings: Settings) -> None:
     resource = Resource.create(
         {
             "service.name": service_name,
-            "service.version": service_version,
-            "deployment.environment": settings.environment,
+            "service.version": _read_version(),
+            "deployment.environment.name": settings.environment,
         }
     )
 
