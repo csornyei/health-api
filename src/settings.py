@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     influxdb_token: str
     influxdb_database: str
     log_level: str = "INFO"
+    json_logs: bool = True
 
     # OpenTelemetry
     otel_exporter_otlp_endpoint: str
