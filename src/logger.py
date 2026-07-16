@@ -1,13 +1,10 @@
 import logging
+
 import structlog
-from structlog.processors import (
-    dict_tracebacks,
-    EventRenamer,
-    CallsiteParameterAdder,
-    CallsiteParameter,
-)
-from structlog.types import EventDict, Processor
 from opentelemetry import trace
+from structlog.processors import (CallsiteParameter, CallsiteParameterAdder,
+                                  EventRenamer, dict_tracebacks)
+from structlog.types import EventDict, Processor
 
 from src.settings import get_settings
 
@@ -30,8 +27,6 @@ def drop_color_message_key(_, __, event_dict: EventDict) -> EventDict:
     """
     event_dict.pop("color_message", None)
     return event_dict
-
-
 
 
 def setup_logging(json_logs: bool = False, log_level: str = "INFO"):

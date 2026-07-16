@@ -3,18 +3,13 @@ from pathlib import Path
 from typing import Sequence
 
 from opentelemetry import trace
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-
-from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.sdk.trace.export import (
-    BatchSpanProcessor,
-    SpanExporter,
-    SpanExportResult,
-)
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+    OTLPSpanExporter
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
+from opentelemetry.sdk.trace.export import (BatchSpanProcessor, SpanExporter,
+                                            SpanExportResult)
 
 from src.settings import Settings
 

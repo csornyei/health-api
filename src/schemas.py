@@ -2,7 +2,6 @@ from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
-
 # ── Shared ─────────────────────────────────────────────────────────────────
 
 
@@ -54,6 +53,7 @@ class Metric(BaseModel):
     name: str
     units: Optional[str] = None
     data: list[MetricDataPoint]
+
 
 class NutritionMetric(BaseModel):
     name: str
@@ -130,7 +130,7 @@ class NutritionData(BaseModel):
 
 
 class NutritionExport(BaseModel):
-    data: NutritionData    
+    data: NutritionData
 
 
 class WorkoutsExport(BaseModel):

@@ -8,7 +8,8 @@ from influxdb_client_3 import InfluxDBClient3
 
 from src.influxdb import get_influxdb_client
 from src.logger import logger
-from src.readers import read_body, read_energy, read_fitness, read_nutrition, read_recovery, read_sleep, read_training
+from src.readers import (read_body, read_energy, read_fitness, read_nutrition,
+                         read_recovery, read_sleep, read_training)
 from src.summary_schemas import SummaryMeta, SummaryResponse
 
 router = APIRouter(prefix="/health")
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/health")
 class SummaryType(str, Enum):
     week = "week"
     twoweeks = "twoweeks"
+    thirtydays = "thirtydays"
     month = "month"
 
 
@@ -26,6 +28,9 @@ def _compute_period(ref: date, summary_type: SummaryType) -> tuple[date, date]:
         period_end = ref.replace(day=calendar.monthrange(ref.year, ref.month)[1])
     elif summary_type == SummaryType.twoweeks:
         period_start = ref - timedelta(days=13)
+        period_end = ref
+    elif summary_type == SummaryType.thirtydays:
+        period_start = ref - timedelta(days=29)
         period_end = ref
     else:
         period_start = ref - timedelta(days=6)
