@@ -63,16 +63,24 @@ def workout_points(workout: Workout) -> list[Point]:
             min(p.Min for p in workout.heartRateData) if workout.heartRateData else None
         )
 
+    active_energy = (
+        workout.activeEnergyBurned.qty
+        if workout.activeEnergyBurned is not None
+        else sum(point.qty for point in workout.activeEnergy)
+    )
+
     summary = (
         Point("workout")
         .tag("id", workout.id)
         .tag("type", workout.name)
         .field("end_ts", int(end_ts.timestamp()))
         .field("duration_s", int(workout.duration))
-        .field("distance_km", workout.distance.qty)
-        .field("speed_kmh", workout.speed.qty)
-        .field("active_energy", workout.activeEnergyBurned.qty)
-        .field("step_cadence", workout.stepCadence.qty)
+        .field("distance_km", workout.distance.qty if workout.distance else 0.0)
+        .field("speed_kmh", workout.speed.qty if workout.speed else 0.0)
+        .field("active_energy", active_energy)
+        .field(
+            "step_cadence", workout.stepCadence.qty if workout.stepCadence else 0.0
+        )
         .time(start_ts)
     )
     if hr_avg is not None:

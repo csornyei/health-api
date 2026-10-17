@@ -24,17 +24,17 @@ IGNORED_WORKOUTDOORS_FIELDS = {
 
 
 class WorkoutdoorsWorkout(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="ignore")
 
     id: str
     name: str
     start: str
     end: str
     duration: float
-    distance: ValueWithUnits
-    speed: ValueWithUnits
-    stepCadence: ValueWithUnits
-    activeEnergyBurned: ValueWithUnits
+    distance: ValueWithUnits | None = None
+    speed: ValueWithUnits | None = None
+    stepCadence: ValueWithUnits | None = None
+    activeEnergyBurned: ValueWithUnits | None = None
     avgHeartRate: ValueWithUnits | None = None
     maxHeartRate: ValueWithUnits | None = None
     heartRate: HeartRateSummary | None = None

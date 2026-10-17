@@ -14,7 +14,7 @@ class ValueWithUnits(BaseModel):
 
 
 class QuantityDataPoint(BaseModel):
-    source: str
+    source: Optional[str] = None
     date: str
     qty: float
 
@@ -22,7 +22,7 @@ class QuantityDataPoint(BaseModel):
 class HeartRateMetricPoint(BaseModel):
     """Daily heart rate summary (min/avg/max) from the metrics array."""
 
-    source: str
+    source: Optional[str] = None
     date: str
     Min: float
     Avg: float
@@ -30,7 +30,7 @@ class HeartRateMetricPoint(BaseModel):
 
 
 class SleepDataPoint(BaseModel):
-    source: str
+    source: Optional[str] = None
     date: str
     sleepStart: str
     sleepEnd: str
@@ -67,7 +67,7 @@ class NutritionMetric(BaseModel):
 class WorkoutHeartRatePoint(BaseModel):
     """Per-interval heart rate sample inside a workout."""
 
-    source: str
+    source: Optional[str] = None
     date: str
     Min: float
     Avg: float
@@ -78,7 +78,7 @@ class WorkoutHeartRatePoint(BaseModel):
 class WorkoutTimeSeriesPoint(BaseModel):
     """Generic per-interval sample with a quantity and units (energy, distance, steps)."""
 
-    source: str
+    source: Optional[str] = None
     date: str
     qty: float
     units: str
@@ -96,18 +96,20 @@ class Workout(BaseModel):
     start: str
     end: str
     duration: float
-    distance: ValueWithUnits
-    speed: ValueWithUnits
-    stepCadence: ValueWithUnits
-    activeEnergyBurned: ValueWithUnits
+    distance: Optional[ValueWithUnits] = None
+    speed: Optional[ValueWithUnits] = None
+    stepCadence: Optional[ValueWithUnits] = None
+    activeEnergyBurned: Optional[ValueWithUnits] = None
     avgHeartRate: Optional[ValueWithUnits] = None
     maxHeartRate: Optional[ValueWithUnits] = None
     heartRate: Optional[HeartRateSummary] = None
     heartRateData: list[WorkoutHeartRatePoint] = Field(default_factory=list)
     heartRateRecovery: list[WorkoutHeartRatePoint] = Field(default_factory=list)
-    activeEnergy: list[WorkoutTimeSeriesPoint]
-    walkingAndRunningDistance: list[WorkoutTimeSeriesPoint]
-    stepCount: list[WorkoutTimeSeriesPoint]
+    activeEnergy: list[WorkoutTimeSeriesPoint] = Field(default_factory=list)
+    walkingAndRunningDistance: list[WorkoutTimeSeriesPoint] = Field(
+        default_factory=list
+    )
+    stepCount: list[WorkoutTimeSeriesPoint] = Field(default_factory=list)
 
 
 # ── Root ───────────────────────────────────────────────────────────────────

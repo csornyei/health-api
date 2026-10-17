@@ -1,4 +1,5 @@
 from src.adapters.workoutdoors import WorkoutParseError, parse_workouts_payload
+from src.writers.workouts import workout_points
 
 
 def _value(qty: float, units: str) -> dict:
@@ -69,11 +70,48 @@ def test_parse_workoutdoors_payload_defaults_missing_series_and_ignores_extras()
     parsed = parse_workouts_payload(payload)
     workout = parsed.export.data.workouts[0]
 
-    assert parsed.payload_format == "workoutdoors"
+    assert parsed.payload_format == "health_auto_export"
     assert workout.id == "workoutdoors-1"
     assert workout.walkingAndRunningDistance == []
     assert workout.activeEnergy[0].qty == 5.6
-    assert parsed.ignored_fields == ["route", "temperature", "totalEnergy"]
+    assert parsed.ignored_fields == []
+
+
+def test_parse_workout_without_sources_or_activity_specific_fields() -> None:
+    payload = {
+        "data": {
+            "workouts": [
+                {
+                    "id": "other-1",
+                    "name": "Other",
+                    "start": "2026-09-06 16:18:00 +0200",
+                    "end": "2026-09-06 16:52:00 +0200",
+                    "duration": 2040.0,
+                    "heartRateRecovery": [
+                        {
+                            "date": "2026-09-06 16:52:00 +0200",
+                            "Min": 90,
+                            "Avg": 100,
+                            "Max": 110,
+                            "units": "bpm",
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+
+    parsed = parse_workouts_payload(payload)
+    workout = parsed.export.data.workouts[0]
+
+    assert workout.distance is None
+    assert workout.speed is None
+    assert workout.stepCadence is None
+    assert workout.activeEnergyBurned is None
+    assert workout.walkingAndRunningDistance == []
+    assert workout.stepCount == []
+    assert workout.heartRateRecovery[0].source is None
+    assert len(workout_points(workout)) == 2
 
 
 def test_parse_test_endpoint_record_wrapper() -> None:
@@ -102,7 +140,7 @@ def test_parse_test_endpoint_record_wrapper() -> None:
 
     parsed = parse_workouts_payload(payload)
 
-    assert parsed.payload_format == "workoutdoors"
+    assert parsed.payload_format == "health_auto_export"
     assert parsed.export.data.workouts[0].id == "wrapped-1"
 
 
