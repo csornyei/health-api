@@ -1,4 +1,8 @@
+import re
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, datetime, timedelta, timezone
+from collections.abc import Generator
 from statistics import mean
 
 import structlog
@@ -10,6 +14,25 @@ from src.settings import get_settings
 
 _tracer = trace.get_tracer(__name__)
 logger = structlog.get_logger(app_name="health-api")
+_missing_measurements: ContextVar[set[str] | None] = ContextVar(
+    "missing_measurements", default=None
+)
+_MISSING_TABLE_PATTERN = re.compile(r"table 'public\.iox\.([^']+)' not found")
+
+
+def _missing_table_name(exc: Exception) -> str | None:
+    match = _MISSING_TABLE_PATTERN.search(str(exc))
+    return match.group(1) if match else None
+
+
+@contextmanager
+def capture_missing_measurements() -> Generator[set[str], None, None]:
+    missing: set[str] = set()
+    token = _missing_measurements.set(missing)
+    try:
+        yield missing
+    finally:
+        _missing_measurements.reset(token)
 
 
 def query(client: InfluxDBClient3, sql: str, params: dict | None = None) -> list[dict]:
@@ -18,6 +41,19 @@ def query(client: InfluxDBClient3, sql: str, params: dict | None = None) -> list
         try:
             table = client.query(sql, language="sql", query_parameters=params or {})
         except Exception as exc:
+            missing_table = _missing_table_name(exc)
+            if missing_table is not None:
+                captured = _missing_measurements.get()
+                if captured is not None:
+                    captured.add(missing_table)
+                logger.warning(
+                    "query skipped because measurement does not exist",
+                    measurement=missing_table,
+                )
+                span.set_attribute("db.result_count", 0)
+                span.set_attribute("db.measurement_missing", True)
+                span.set_attribute("db.measurement", missing_table)
+                return []
             span.record_exception(exc)
             span.set_status(StatusCode.ERROR, str(exc))
             raise
@@ -73,7 +109,7 @@ def daily_metric(
     n: int,
 ) -> list[float | None]:
     """Generic daily aggregation query returning a length-N daily array."""
-    day_map: dict[date, float] = {}
+    day_map: dict[date, float | None] = {}
 
     chunk_days = summary_query_chunk_days()
     chunk_start = period_start

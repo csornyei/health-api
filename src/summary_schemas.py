@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DailyMetric(BaseModel):
@@ -129,3 +129,4 @@ class SummaryResponse(BaseModel):
     fitness: Fitness
     body: Body
     nutrition: Nutrition
+    warnings: list[str] = Field(default_factory=list)

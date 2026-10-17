@@ -1,7 +1,10 @@
 from datetime import date
 from types import SimpleNamespace
 
+import pytest
+
 from src.readers import _daily_metric
+from src.readers.common import capture_missing_measurements, query
 
 
 class FakeTable:
@@ -29,6 +32,14 @@ class FakeClient:
             }
         )
         return FakeTable(self.rows_by_start.get(query_parameters["start"], []))
+
+
+class FailingClient:
+    def __init__(self, error: Exception) -> None:
+        self.error = error
+
+    def query(self, sql: str, language: str, query_parameters: dict) -> FakeTable:
+        raise self.error
 
 
 def test_daily_metric_queries_one_day_chunks_and_aligns_results(monkeypatch) -> None:
@@ -63,3 +74,23 @@ def test_daily_metric_queries_one_day_chunks_and_aligns_results(monkeypatch) -> 
         "2026-07-02T23:59:59Z",
         "2026-07-03T23:59:59Z",
     ]
+
+
+def test_query_returns_empty_when_measurement_does_not_exist() -> None:
+    client = FailingClient(
+        Exception(
+            "Error during planning: table 'public.iox.weight_body_mass' not found"
+        )
+    )
+
+    with capture_missing_measurements() as missing:
+        assert query(client, 'SELECT * FROM "weight_body_mass"') == []
+
+    assert missing == {"weight_body_mass"}
+
+
+def test_query_preserves_real_database_failures() -> None:
+    client = FailingClient(Exception("connection refused"))
+
+    with pytest.raises(Exception, match="connection refused"):
+        query(client, 'SELECT * FROM "weight_body_mass"')

@@ -10,6 +10,7 @@ from src.influxdb import get_influxdb_client
 from src.logger import logger
 from src.readers import (read_body, read_energy, read_fitness, read_nutrition,
                          read_recovery, read_sleep, read_training)
+from src.readers.common import capture_missing_measurements
 from src.summary_schemas import SummaryMeta, SummaryResponse
 
 router = APIRouter(prefix="/health")
@@ -55,13 +56,16 @@ def get_summary(
     )
 
     try:
-        training, active_daily, _ = read_training(db, period_start, period_end, n)
-        energy = read_energy(db, active_daily, period_start, period_end, n)
-        recovery = read_recovery(db, summary_type.value, period_start, period_end, n)
-        sleep, sleep_summary = read_sleep(db, period_start, period_end)
-        fitness = read_fitness(db, period_start, period_end)
-        body = read_body(db, period_start, period_end, n)
-        nutrition = read_nutrition(db, period_start, period_end, n)
+        with capture_missing_measurements() as missing_measurements:
+            training, active_daily, _ = read_training(db, period_start, period_end, n)
+            energy = read_energy(db, active_daily, period_start, period_end, n)
+            recovery = read_recovery(
+                db, summary_type.value, period_start, period_end, n
+            )
+            sleep, sleep_summary = read_sleep(db, period_start, period_end)
+            fitness = read_fitness(db, period_start, period_end)
+            body = read_body(db, period_start, period_end, n)
+            nutrition = read_nutrition(db, period_start, period_end, n)
     except Exception as exc:
         logger.error("summary query failed", exc_info=exc)
         raise HTTPException(status_code=503, detail="Failed to build summary") from exc
@@ -81,4 +85,8 @@ def get_summary(
         fitness=fitness,
         body=body,
         nutrition=nutrition,
+        warnings=[
+            f"No {measurement} table exists in the database"
+            for measurement in sorted(missing_measurements)
+        ],
     )
